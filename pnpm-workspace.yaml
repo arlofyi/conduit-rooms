@@ -1,0 +1,17 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm blocks build scripts unless each is allowed or refused by name.
+# esbuild links its platform binary in one. The other two come in with pi-ai,
+# for providers Rooms does not use, and do not need to run.
+allowBuilds:
+  '@google/genai': false
+  esbuild: true
+  protobufjs: false
+
+# pnpm holds back packages published in the last few days. The Agent SDK
+# ships daily and pins its own platform binaries, so it is exempt.
+minimumReleaseAgeExclude:
+  - '@anthropic-ai/claude-agent-sdk'
+  - '@anthropic-ai/claude-agent-sdk-*'

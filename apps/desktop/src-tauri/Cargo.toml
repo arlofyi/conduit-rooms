@@ -1,0 +1,18 @@
+[package]
+name = "conduit-rooms"
+version = "0.0.0"
+description = "A chat workspace where each project is represented by one lead agent."
+authors = ["Ooozzy (Uzair Hayat)"]
+edition = "2021"
+
+[lib]
+name = "conduit_rooms_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

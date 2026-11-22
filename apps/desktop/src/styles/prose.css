@@ -1,0 +1,263 @@
+/*
+ * Rendered Markdown in a message body. Measurements follow Conduit's
+ * .hq-assistant (theme.css). Message bodies allow a subset only (R-UI-23):
+ * headings read as bold text, and images are not shown.
+ */
+@layer components {
+  .prose {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-bright);
+    word-break: break-word;
+    -webkit-user-select: text;
+    user-select: text;
+    cursor: text;
+  }
+
+  .prose > :first-child {
+    margin-top: 0;
+  }
+  .prose > :last-child {
+    margin-bottom: 0;
+  }
+
+  .prose p {
+    margin: 8px 0;
+  }
+
+  .prose ul,
+  .prose ol {
+    margin: 8px 0;
+    padding-left: 22px;
+  }
+  .prose ul {
+    list-style: disc;
+  }
+  .prose ol {
+    list-style: decimal;
+  }
+  .prose li > p {
+    margin: 2px 0;
+  }
+
+  .prose strong {
+    font-weight: 600;
+  }
+
+  .prose a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-color: var(--accent-line);
+    text-underline-offset: 2px;
+    cursor: pointer;
+    transition: text-decoration-color 120ms ease-out;
+  }
+  .prose a:hover {
+    text-decoration-color: var(--accent);
+  }
+
+  .prose code {
+    font-family: var(--mono-font);
+    font-size: 12.5px;
+  }
+  .prose :not(pre) > code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--selection-bg) 70%, transparent);
+  }
+
+  .prose pre {
+    overflow-x: auto;
+    margin: 10px 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--sidebar-bg) 70%, transparent);
+  }
+
+  .prose blockquote {
+    margin: 8px 0;
+    padding-left: 12px;
+    color: var(--ink-soft);
+    border-left: 1px solid var(--line-strong);
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    margin: 10px 0 4px;
+    font-size: inherit;
+    font-weight: 600;
+  }
+
+  .prose img {
+    display: none;
+  }
+
+  .prose hr {
+    margin: 12px 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  /*
+   * Tables: a rounded card with a tinted header and rules between rows only.
+   * The table is its own scroll box, so a wide one scrolls sideways inside
+   * the message instead of pushing the page wider.
+   */
+  .prose table {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin: 12px 0;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    border-spacing: 0;
+    background: color-mix(in srgb, var(--sidebar-bg) 55%, transparent);
+    font-size: 13px;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .prose th,
+  .prose td {
+    padding: 8px 14px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .prose :is(th, td)[align="right"] {
+    text-align: right;
+  }
+  .prose :is(th, td)[align="center"] {
+    text-align: center;
+  }
+
+  .prose th {
+    padding-block: 7px;
+    background: color-mix(in srgb, var(--selection-bg) 80%, transparent);
+    color: var(--text-mid);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+
+  .prose td {
+    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    color: var(--ink-soft);
+  }
+  /* The first column names the row, so it reads a step brighter than the rest. */
+  .prose td:first-child {
+    color: var(--text-bright);
+    font-weight: 500;
+  }
+
+  /* On the cells, not the row: the cells are what change color. */
+  .prose tbody td {
+    transition: all 150ms ease-in;
+  }
+  .prose tbody tr:hover td {
+    background: color-mix(in srgb, var(--selection-bg) 55%, transparent);
+  }
+
+  /* What richTables.ts found in a column. */
+
+  /* Numbers sit flush right so their digits line up down the column. */
+  .prose :is(th, td).is-num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Paths and addresses read as code. */
+  .prose td.is-path {
+    font-family: var(--mono-font);
+    font-size: 12px;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  /* A verdict: a small coloured mark, then what was said about it. */
+  .prose .cell-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 1px 8px 1px 7px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--mark);
+    background: color-mix(in srgb, var(--mark) 14%, transparent);
+  }
+  .prose .cell-mark::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--mark);
+  }
+  .prose .cell-mark[data-tone="good"] {
+    --mark: var(--green);
+  }
+  .prose .cell-mark[data-tone="warn"] {
+    --mark: var(--amber);
+  }
+  .prose .cell-mark[data-tone="bad"] {
+    --mark: var(--red);
+  }
+  .prose .cell-note {
+    margin-left: 8px;
+    color: var(--text-mid);
+  }
+}
+
+/* A mention of a known project (R-UI-24): Conduit's .hq-chip at the size of the text around it. */
+@layer components {
+  .mention {
+    padding: 1px 6px;
+    border: 1px solid color-mix(in srgb, var(--accent-line) 60%, transparent);
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.93em;
+    white-space: nowrap;
+  }
+
+  /*
+   * Long-form prose: a Claude session's turns run to many paragraphs, lists
+   * and tables, and at the spacing of a short chat message they read as a wall.
+   */
+  .prose-roomy {
+    line-height: 1.65;
+  }
+  .prose-roomy p,
+  .prose-roomy ul,
+  .prose-roomy ol,
+  .prose-roomy blockquote {
+    margin: 14px 0;
+  }
+  .prose-roomy li + li {
+    margin-top: 6px;
+  }
+  .prose-roomy li > ul,
+  .prose-roomy li > ol {
+    margin: 6px 0;
+  }
+  .prose-roomy :is(h1, h2, h3, h4) {
+    margin: 22px 0 10px;
+  }
+  .prose-roomy pre,
+  .prose-roomy table {
+    margin: 16px 0;
+  }
+  .prose-roomy > :first-child {
+    margin-top: 0;
+  }
+  .prose-roomy > :last-child {
+    margin-bottom: 0;
+  }
+}

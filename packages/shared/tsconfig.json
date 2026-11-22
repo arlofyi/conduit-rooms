@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Shared code runs in Node and in the webview. Both provide Web Crypto.
+    "lib": ["ES2023", "DOM"]
+  },
+  "include": ["src"]
+}

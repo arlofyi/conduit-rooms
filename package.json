@@ -1,0 +1,19 @@
+{
+  "name": "conduit-rooms",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "description": "A chat workspace where each project is represented by one lead agent.",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @rooms/sidecar --filter @rooms/desktop dev",
+    "dev:sidecar": "pnpm --filter @rooms/sidecar dev",
+    "dev:web": "pnpm --filter @rooms/desktop dev",
+    "dev:app": "pnpm --filter @rooms/desktop tauri dev",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

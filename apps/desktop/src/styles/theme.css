@@ -1,0 +1,240 @@
+/*
+ * Design tokens. Every value in this file is copied from Conduit
+ * (~/ooozzy/conduit, commit 27df471): the three themes from src/themes.ts,
+ * the fonts and derived chat colors from src/theme.css. See specs/design-tokens.md.
+ *
+ * No color is invented here, and no color may be written anywhere else in
+ * the app (R-DS-01). To change the look, change Conduit and copy again.
+ */
+
+/* ---- The three themes. The default is the first: "warm near-black". ---- */
+
+:root,
+:root[data-theme="warm-near-black"] {
+  --accent: #ce8a6e;
+  --sidebar-bg: #1b1917;
+  --selection-bg: #272523;
+  --panel-bg: #151110;
+  --text-bright: #ece8e4;
+  --text-mid: #968d86;
+  --text-dim: #5e574f;
+  --border: #2a2522;
+  --green: #88b07c;
+  --red: #c97a72;
+  --amber: #c2a063;
+  --hover: rgba(255, 255, 255, 0.03);
+  color-scheme: dark;
+}
+
+:root[data-theme="warm-dim"] {
+  --accent: #d2906f;
+  --sidebar-bg: #2a2420;
+  --selection-bg: #383029;
+  --panel-bg: #211d1a;
+  --text-bright: #ece6df;
+  --text-mid: #ab9f95;
+  --text-dim: #75695f;
+  --border: #3b332c;
+  --green: #8fb37f;
+  --red: #ce8079;
+  --amber: #c8a667;
+  --hover: rgba(255, 255, 255, 0.03);
+  color-scheme: dark;
+}
+
+:root[data-theme="warm-light"] {
+  --accent: #b5613f;
+  --sidebar-bg: #efe7da;
+  --selection-bg: #e4d8c6;
+  --panel-bg: #f6f1e9;
+  --text-bright: #2c2622;
+  --text-mid: #6f655a;
+  --text-dim: #9c9286;
+  --border: #ddd2c2;
+  --green: #5d7c4d;
+  --red: #b04a42;
+  --amber: #8f6a25;
+  --hover: rgba(0, 0, 0, 0.04);
+  color-scheme: light;
+}
+
+:root {
+  --ui-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --mono-font: "SF Mono", SFMono-Regular, Menlo, monospace;
+
+  /* Conduit's chat surface colors (theme.css, .root-chat), each derived from the tokens above. */
+  --ink-soft: color-mix(in srgb, var(--text-bright) 45%, var(--text-mid));
+  --line-strong: color-mix(in srgb, var(--border) 55%, var(--text-dim));
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-line: color-mix(in srgb, var(--accent) 34%, transparent);
+  --accent-pressed: color-mix(in srgb, var(--accent) 85%, #000);
+
+  /* Conduit's control states (theme.css, .ui-btn): hover edge, hover wash, primary hover. */
+  --accent-edge: color-mix(in srgb, var(--accent) 70%, var(--border));
+  --accent-wash: color-mix(in srgb, var(--accent) 6%, var(--sidebar-bg));
+  --accent-hover: color-mix(in srgb, var(--accent) 88%, var(--text-bright));
+
+  --titlebar-h: 30px;
+  --sidebar-w: 232px;
+  --drawer-w: 420px;
+}
+
+/* ---- Tailwind theme: the tokens above, exposed as utilities. ---- */
+
+/* Start from nothing, so a class like bg-red-500 does not exist to be reached for. */
+@theme {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+}
+
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-accent-pressed: var(--accent-pressed);
+  --color-accent-edge: var(--accent-edge);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-hover: var(--accent-hover);
+
+  --color-panel: var(--panel-bg);
+  --color-sidebar: var(--sidebar-bg);
+  --color-selection: var(--selection-bg);
+  --color-hover: var(--hover);
+
+  --color-line: var(--border);
+  --color-line-strong: var(--line-strong);
+
+  --color-bright: var(--text-bright);
+  --color-soft: var(--ink-soft);
+  --color-mid: var(--text-mid);
+  --color-dim: var(--text-dim);
+
+  --color-good: var(--green);
+  --color-warn: var(--amber);
+  --color-bad: var(--red);
+
+  --font-sans: var(--ui-font);
+  --font-mono: var(--mono-font);
+}
+
+@theme {
+  /* The sizes Conduit actually uses, named for where it uses them. */
+  --text-micro: 10px;
+  --text-badge: 10.5px;
+  --text-label: 11px;
+  --text-note: 11.5px;
+  --text-ui: 12px;
+  --text-name: 12.5px;
+  --text-title: 13px;
+  --text-body: 14px;
+  --text-composer: 15px;
+  --text-heading: 16px;
+
+  --radius-row: 5px;
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-panel: 10px;
+  --radius-modal: 12px;
+  --radius-composer: 18px;
+  --radius-full: 999px;
+
+  --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.4);
+  --shadow-drawer: -12px 0 30px rgba(0, 0, 0, 0.35);
+  --shadow-send: 0 3px 10px -2px color-mix(in srgb, var(--accent) 30%, transparent);
+  --shadow-composer: 0 4px 24px -8px color-mix(in srgb, var(--accent) 20%, transparent);
+
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Conduit's activity pulse (hq-pulse) and its slow spinner (todo-spin). */
+  --animate-pulse-soft: pulse-soft 1.2s ease-in-out infinite;
+  --animate-spin-slow: spin-slow 2.5s linear infinite;
+
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  @keyframes spin-slow {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /*
+   * Rooms' own motion, for things arriving in and leaving the composer.
+   * Short and settling, in Conduit's manner: nothing bounces twice.
+   */
+  --animate-pop-in: pop-in 220ms var(--ease-settle) both;
+  --animate-pop-out: pop-out 160ms ease-in both;
+  --animate-rise-in: rise-in 200ms var(--ease-settle) both;
+  --animate-nudge: nudge 320ms ease-out both;
+  --animate-bob: bob 1.4s ease-in-out infinite;
+  --animate-fade-in: fade-in 180ms ease-out both;
+
+  /* A picture lands: it grows from small and slightly low, and overshoots a touch. */
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.6) translateY(6px);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.05) translateY(0);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* A picture is taken away: it shrinks into its own space, which closes behind it. */
+  @keyframes pop-out {
+    to {
+      opacity: 0;
+      transform: scale(0.5);
+      width: 0;
+      margin-right: -8px;
+    }
+  }
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  /* A small shake of the head, for something that was turned away. */
+  @keyframes nudge {
+    20% {
+      transform: translateX(-4px);
+    }
+    45% {
+      transform: translateX(3px);
+    }
+    70% {
+      transform: translateX(-2px);
+    }
+  }
+
+  /* A whole view arriving. Opacity only, so nothing on it shifts as it comes in. */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes bob {
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+}

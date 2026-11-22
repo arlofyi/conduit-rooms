@@ -1,0 +1,70 @@
+@import "tailwindcss";
+@import "./theme.css";
+@import "./prose.css";
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    font-family: var(--ui-font);
+    font-size: 12px;
+    background: var(--panel-bg);
+    color: var(--text-bright);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    cursor: default;
+
+    /* Chrome is not selectable, as in any native app. Reading surfaces opt back in with select-text. */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 32%, transparent);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* One focus ring for every control, as Conduit draws it. */
+  :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+    outline-offset: 1px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* The strip at the top of each column that drags the window (Tauri overlay titlebar). */
+@utility drag-region {
+  height: var(--titlebar-h);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}

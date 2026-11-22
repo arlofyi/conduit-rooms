@@ -1,0 +1,198 @@
+// Copied from ~/ooozzy/conduit src/markdown.ts (commit 27df471). Code unchanged, apart from two
+// non-null assertions this repo's stricter compiler asks for, and comment dashes. Change it in Conduit and copy again.
+
+// Markdown -> sanitized HTML for the editor's preview mode (MarkdownPreview.tsx).
+//
+// marked does NOT sanitize: raw HTML in the source passes straight through, and the
+// webview runs with `csp: null` plus Tauri IPC in scope: so a script smuggled into a
+// previewed README would execute with native reach. Rendering therefore goes through
+// a strict whitelist sanitizer over the PARSED DOM (not regexes, not renderer
+// overrides): only tags marked itself emits survive, attributes are dropped unless
+// per-tag allowed, and URL attributes must pass the scheme policy below.
+//
+// The policy tables and URL checks are pure and unit-tested in node
+// (markdown.test.ts); only sanitizeHtml/renderMarkdown need a browser DOM.
+
+import { Marked } from "marked";
+import { enrichTables } from "./richTables";
+
+/** Per-tag attribute whitelist. A tag's presence makes the tag itself allowed. */
+export const ALLOWED: Readonly<Record<string, readonly string[]>> = {
+  a: ["href", "title"],
+  blockquote: [],
+  br: [],
+  code: ["class"],
+  del: [],
+  em: [],
+  h1: [],
+  h2: [],
+  h3: [],
+  h4: [],
+  h5: [],
+  h6: [],
+  hr: [],
+  img: ["src", "alt", "title"],
+  // Task-list checkboxes ("- [x] done"). filterAttrs forces type=checkbox + disabled.
+  input: ["type", "checked", "disabled"],
+  li: [],
+  ol: ["start"],
+  p: [],
+  pre: [],
+  strong: [],
+  table: [],
+  tbody: [],
+  td: ["align"],
+  th: ["align"],
+  thead: [],
+  tr: [],
+  ul: [],
+};
+
+/** Tags removed WITH their children (active/loading content). Unknown tags outside
+ *  this set are merely unwrapped, keeping their text. */
+export const DROP: ReadonlySet<string> = new Set([
+  "script",
+  "style",
+  "iframe",
+  "frame",
+  "object",
+  "embed",
+  "applet",
+  "form",
+  "svg",
+  "math",
+  "link",
+  "meta",
+  "base",
+  "video",
+  "audio",
+  "source",
+  "track",
+  "template",
+  "slot",
+  "dialog",
+]);
+
+/** Scheme of a URL after stripping the control/whitespace chars browsers ignore
+ *  (defeats "java\nscript:"-style smuggling), or null for scheme-less/relative. */
+export function schemeOf(url: string): string | null {
+  const compact = url.replace(/[\u0000-\u0020]+/g, "");
+  const m = /^([a-z][a-z0-9+.-]*):/i.exec(compact);
+  return m ? m[1]!.toLowerCase() : null;
+}
+
+/** Links: http(s) + mailto open externally; scheme-less (relative, #anchor) is inert
+ *  because MarkdownPreview preventDefaults every anchor click. Everything else
+ *  (javascript:, file:, custom schemes) is stripped. */
+export function isSafeLinkHref(href: string): boolean {
+  const s = schemeOf(href);
+  return s === null || s === "http" || s === "https" || s === "mailto";
+}
+
+/** Images: remote http(s) or inline data:image/*. In an <img> context SVG data URLs
+ *  cannot run script. No scheme-less pass-through: a relative src would resolve
+ *  against the app origin, not the file's directory, so it can never be right. */
+export function isSafeImageSrc(src: string): boolean {
+  const s = schemeOf(src);
+  if (s === "http" || s === "https") return true;
+  return s === "data" && /^data:image\//i.test(src.replace(/[\u0000-\u0020]+/g, ""));
+}
+
+const URL_ATTRS: Readonly<Record<string, (v: string) => boolean>> = {
+  href: isSafeLinkHref,
+  src: isSafeImageSrc,
+};
+
+function filterAttrs(el: Element): void {
+  const tag = el.tagName.toLowerCase();
+  const allowed = ALLOWED[tag] ?? [];
+  for (const attr of Array.from(el.attributes)) {
+    const name = attr.name.toLowerCase();
+    const urlCheck = URL_ATTRS[name];
+    if (!allowed.includes(name) || (urlCheck && !urlCheck(attr.value))) {
+      el.removeAttribute(attr.name);
+    }
+  }
+  if (tag === "input") {
+    // Only GFM task-list checkboxes, always inert.
+    el.setAttribute("type", "checkbox");
+    el.setAttribute("disabled", "");
+  }
+}
+
+function sanitizeChildren(parent: Node): void {
+  for (const child of Array.from(parent.childNodes)) {
+    if (child.nodeType === 8 /* comment */) {
+      parent.removeChild(child);
+      continue;
+    }
+    if (child.nodeType !== 1 /* element */) continue;
+    const el = child as Element;
+    const tag = el.tagName.toLowerCase();
+    if (DROP.has(tag)) {
+      parent.removeChild(el);
+      continue;
+    }
+    sanitizeChildren(el);
+    if (tag in ALLOWED) {
+      filterAttrs(el);
+    } else {
+      // Unwrap: promote the (already sanitized) children, drop the tag itself.
+      while (el.firstChild) parent.insertBefore(el.firstChild, el);
+      parent.removeChild(el);
+    }
+  }
+}
+
+/** Browser-only: whitelist-sanitize an HTML fragment. Exported for the renderer. */
+export function sanitizeHtml(html: string): string {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  sanitizeChildren(doc.body);
+  return doc.body.innerHTML;
+}
+
+// Instance (not the `marked` singleton) so no other module can mutate our options.
+const md = new Marked({ gfm: true, breaks: false, async: false });
+
+/** Markdown source -> sanitized HTML string, safe for dangerouslySetInnerHTML. */
+export function renderMarkdown(source: string): string {
+  // Tables are enriched after sanitizing, so the only markup added is ours.
+  return enrichTables(sanitizeHtml(md.parse(source) as string));
+}
+
+/** One run of an assistant message: plain markdown, or the inside of an Insight block. */
+export type MdSegment = { kind: "md" | "insight"; text: string };
+
+/**
+ * Matches the explanatory output style's callout however Claude happens to write it:
+ *
+ *   `★ Insight ─────…`     the opening line, with or without the code-span backticks
+ *   …the points…
+ *   `─────…`               a closing rule, on its own line or run on after the last point
+ *
+ * The two rules are chrome, not content: the UI draws its own card. A closing
+ * rule is eight dashes or more, so a short dash inside the text does not end the block.
+ */
+const INSIGHT_RE = /`?★\s*Insight[ \t]*─*`?[ \t]*\n([\s\S]*?)\s*`?─{8,}`?/g;
+
+/**
+ * Split an assistant message around its `★ Insight` blocks so the renderer can wrap
+ * each one in a styled callout instead of showing the raw dash-rule chrome. Text
+ * without any block comes back as a single "md" segment. Pure, node-testable.
+ */
+export function splitInsights(source: string): MdSegment[] {
+  const out: MdSegment[] = [];
+  let last = 0;
+  for (const m of source.matchAll(INSIGHT_RE)) {
+    const at = m.index ?? 0;
+    const before = source.slice(last, at).trim();
+    if (before) out.push({ kind: "md", text: before });
+    const inner = m[1]!.trim();
+    if (inner) out.push({ kind: "insight", text: inner });
+    last = at + m[0].length;
+  }
+  const rest = source.slice(last).trim();
+  if (rest) out.push({ kind: "md", text: rest });
+  if (out.length === 0) out.push({ kind: "md", text: source });
+  return out;
+}
