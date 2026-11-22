@@ -1,6 +1,6 @@
-# conduit-rooms
+# Conduit Rooms
 
-A Slack-like workspace where you talk to the lead agents of your projects the way a product manager talks to colleagues. Tag a project by name in a room (`@arlo`, `@conduit`, `@hobbyist`) or message its lead in a direct chat.
+Conduit Rooms is a single-user, Slack-like desktop app for talking to your projects. Each project is represented by one lead agent that can read its repository and cannot change it. You tag a lead by project name in a room (`@arlo`, `@conduit`) or message it in a direct chat, the way a product manager talks to colleagues. It reuses the design and the project list of Conduit, a separate app, and reads Conduit's state without ever writing it.
 
 The full specification lives in [`specs/`](specs/README.md). Start there.
 
@@ -39,21 +39,63 @@ Projects                          each project once. What needs you first, then 
 Quiet                 23  >       idle projects you have never talked to
 ```
 
-## Run it
+## In short
 
-Needs Node 24, pnpm 11, and for the desktop window, Rust.
+M0 and M1 are done. M2 (common rooms) is in progress: the table above lists what works. The packaged app does not start the sidecar yet, so run it in development with `pnpm dev:app`.
+
+## Stack
+
+- **Desktop:** Tauri 2 (Rust shell), Vite 8, React 19, Tailwind CSS 4, Headless UI, SWR.
+- **Sidecar:** Node HTTP server on Hono, SQLite, the Claude Agent SDK for leads, Zod for validation.
+- **Shared:** TypeScript types and the HTTP contract, imported by both sides.
+- **Tooling:** pnpm workspaces, TypeScript, Vitest.
+
+## Requirements
+
+- Node 24 or newer
+- pnpm 11
+- Rust and the Tauri 2 prerequisites, for the desktop window
+- macOS. The default data paths are under `~/Library/Application Support`.
+
+## Setup
 
 ```sh
 pnpm install
-pnpm dev        # sidecar + web app, open http://localhost:1420
-pnpm dev:app    # the same, inside the Tauri window
+cp .env.example .env.local   # every value is optional
+pnpm dev:app                 # starts the sidecar and the web app, inside the Tauri window
 ```
 
-Leads sign in with `ANTHROPIC_API_KEY` if you put one in `.env.local` (copy `.env.example`). Without a key they use the Claude Code login already on this Mac.
+Other scripts:
 
 ```sh
-pnpm test       # unit tests in every package
+pnpm dev          # sidecar + web app, open http://localhost:1420
+pnpm dev:sidecar  # the sidecar alone
+pnpm dev:web      # the web app alone
+pnpm test         # unit tests in every package
 pnpm typecheck
+```
+
+## Environment variables
+
+Set these in `.env.local` at the repo root. It is gitignored. Every value is optional.
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | unset | Lead auth. Without it, leads use the Claude Code login already on this machine. |
+| `ROOMS_SIDECAR_PORT` | `8530` | The port the sidecar listens on. |
+| `ROOMS_DATA_DIR` | `~/Library/Application Support/ConduitRooms` | Where Rooms keeps its database and runtime files. |
+| `CONDUIT_DATA_DIR` | `~/Library/Application Support/ConduitTauri` | Where Conduit keeps `state.json`. Rooms reads it and never writes it. |
+| `TYPESAFE_API_KEY` | unset | Uses Jev, TypeSafe's classifier, as the gate that decides which lead an untagged message is for. |
+| `ROOMS_GATE_MODEL` | `qwen3:8b` | Without a TypeSafe key, the gate is a local model served by Ollama. This is the model. |
+| `ROOMS_GATE_URL` | `http://127.0.0.1:11434` | The Ollama address for the local gate. |
+
+## Repo layout
+
+```text
+apps/desktop      Tauri 2 shell (src-tauri) and the Vite/React app (src)
+apps/sidecar      Node HTTP sidecar: database, project ledger, lead runtime
+packages/shared   Types and the HTTP contract both sides import
+specs/            The specification, design tokens and the rulings log (conflicts.md)
 ```
 
 ## How it fits together
